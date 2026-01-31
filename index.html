@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luxury Focus Planner - Clean White Edition</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* Base Settings for Clean UI */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Slate 50 - Very light gray/white */
+            color: #0f172a; /* Slate 900 - Dark text for contrast */
+            min-height: 100vh;
+            transition: background-color 0.5s ease;
+        }
+
+        html { scroll-padding-top: 100px; }
+        .zoom-container { transform: scale(0.98); transform-origin: top center; width: 100%; transition: transform 0.5s ease; }
+
+        /* CLEAN CARD DESIGN SYSTEM */
+        .clean-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0; /* Slate 200 */
+            border-radius: 1.5rem; /* Rounded 2xl */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); /* Soft Shadow */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .clean-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+        }
+
+        /* HEADER */
+        .clean-header {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+        }
+
+        /* INPUTS */
+        .clean-input {
+            background: #f1f5f9; /* Slate 100 */
+            border: 1px solid #cbd5e1; /* Slate 300 */
+            color: #334155;
+            transition: all 0.2s;
+        }
+        
+        .clean-input:focus {
+            background: #ffffff;
+            border-color: #6366f1; /* Indigo 500 */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            outline: none;
+        }
+
+        /* Priority Borders */
+        .priority-high { border-left-color: #ef4444 !important; background: #fef2f2 !important; } /* Red bg tint */
+        .priority-medium { border-left-color: #f59e0b !important; background: #fffbeb !important; } /* Amber bg tint */
+        .priority-low { border-left-color: #3b82f6 !important; background: #eff6ff !important; } /* Blue bg tint */
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Horizontal Scroll Container */
+        .horizontal-scroll-container {
+            display: flex;
+            flex-direction: row;
+            overflow-x: auto;
+            gap: 1rem;
+            padding-bottom: 1rem;
+            scroll-behavior: smooth;
+            align-items: flex-start;
+        }
+
+        /* Calendar & Notion Styles */
+        .notion-editor { outline: none; min-height: 120px; white-space: pre-wrap; font-size: 0.95rem; line-height: 1.7; color: #475569; }
+        .notion-editor:empty:before { content: attr(placeholder); color: #94a3b8; }
+        
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .calendar-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-size: 0.8rem; cursor: default; font-weight: 500; color: #64748b; } 
+        .calendar-day:hover { background: #f1f5f9; color: #0f172a; }
+        .calendar-day.today { background: #0f172a; color: white; font-weight: bold; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2); }
+        
+        /* Big Calendar */
+        .big-calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 1rem; overflow: hidden; }
+        .big-calendar-cell { background: #ffffff; min-height: 150px; padding: 12px; position: relative; transition: all 0.2s; cursor: pointer; display: flex; flex-direction: column; }
+        .big-calendar-cell:hover { background: #f8fafc; }
+        .big-calendar-cell.has-note { background: #f0f9ff; }
+        .big-calendar-cell.today { background: #fefce8; } /* Light yellow for today */
+        .note-preview { font-size: 11px; color: #475569; background: #f1f5f9; padding: 6px; border-radius: 6px; margin-top: 6px; white-space: pre-wrap; overflow-y: auto; flex-grow: 1; line-height: 1.4; border-left: 2px solid #cbd5e1; }
+        
+        /* Modal */
+        .modal-overlay { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); z-index: 100; }
+        .modal-content { animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid #e2e8f0; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        @keyframes modalPop { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        
+        /* Checkbox */
+        .custom-checkbox input:checked + div { background-color: #0f172a; border-color: #0f172a; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slide-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    </style>
+</head>
+<body class="min-h-screen overflow-x-hidden">
+
+    <!-- GLOBAL NAVBAR -->
+    <nav class="fixed top-0 left-0 w-full z-50 clean-header px-8 py-4 flex justify-between items-center h-20 transition-all duration-300">
+        <div class="flex items-center gap-8">
+            <a href="#dashboard" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-xl shadow-slate-200 group-hover:scale-105 transition duration-300">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                </div>
+                <span class="text-xl font-extrabold text-slate-800 tracking-tight hidden sm:block">Luxury<span class="text-indigo-600">Focus</span></span>
+            </a>
+            
+            <!-- SEARCH BAR -->
+            <div class="relative hidden lg:block">
+                <input type="text" id="searchInput" placeholder="Cari tugas..." class="clean-input pl-10 pr-4 py-2.5 rounded-full w-72 text-sm outline-none focus:w-80 transition-all duration-300 bg-slate-50 border-slate-200 focus:bg-white">
+                <i data-lucide="search" class="absolute left-3.5 top-3 w-4 h-4 text-slate-400"></i>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button onclick="openSettingsModal()" class="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-full transition border border-transparent hover:border-slate-200">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+            </button>
+
+            <div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
+            
+            <div class="flex items-center gap-3 cursor-pointer hover:bg-white p-1 pr-4 rounded-full transition border border-transparent hover:border-slate-100 hover:shadow-sm">
+                <div class="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white">UP</div>
+                <div class="text-left hidden sm:block">
+                    <p class="text-xs font-bold text-slate-800">User Pro</p>
+                    <p class="text-[10px] text-slate-500 font-medium">Premium Plan</p>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <div class="pt-28 pb-16 px-6 md:px-8">
+        <div class="zoom-container mx-auto">
+            <div id="dashboard" class="max-w-[1920px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 scroll-mt-24">
+                
+                <!-- KOLOM KIRI (TASKS & HISTORY) -->
+                <div class="lg:col-span-8 flex flex-col gap-8 h-full overflow-hidden">
+                    
+                    <!-- HEADER DASHBOARD -->
+                    <header class="clean-card p-8 animate-slide-up flex justify-between items-end flex-shrink-0">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-indigo-50 px-3 py-1 rounded-full text-[11px] font-bold tracking-widest uppercase text-indigo-600 border border-indigo-100">Planner Harian</span>
+                            </div>
+                            <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight" id="currentDateDisplay">Loading...</h1>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-medium text-slate-400 mb-1">Waktu Sekarang</p>
+                            <div class="text-6xl font-light text-slate-800 tracking-tighter" id="clockDisplay">00:00</div>
+                        </div>
+                    </header>
+
+                    <!-- Input Tugas -->
+                    <div class="clean-card p-6 animate-slide-up flex-shrink-0" style="animation-delay: 0.1s;">
+                        <form id="todoForm" class="flex flex-col xl:flex-row gap-4 items-end">
+                            <div class="flex-grow w-full">
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Fokus Utama</label>
+                                <input type="text" id="taskInput" placeholder="Apa yang ingin dicapai?" class="clean-input w-full px-4 py-3 rounded-xl font-medium text-sm transition" required>
+                            </div>
+                            
+                            <div class="w-full xl:w-40">
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Kategori</label>
+                                <div class="relative">
+                                    <select id="categoryInput" class="clean-input w-full px-4 py-3 rounded-xl font-medium text-sm appearance-none cursor-pointer"></select>
+                                    <div class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-slate-400">
+                                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="w-full xl:w-32">
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Prioritas</label>
+                                <div class="relative">
+                                    <select id="priorityInput" class="clean-input w-full px-4 py-3 rounded-xl font-medium text-sm appearance-none cursor-pointer">
+                                        <option value="high">🔥 Tinggi</option>
+                                        <option value="medium" selected>⚡ Normal</option>
+                                        <option value="low">☕ Rendah</option>
+                                    </select>
+                                    <div class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-slate-400">
+                                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="w-full xl:w-40">
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Pengulangan</label>
+                                <div class="relative">
+                                    <select id="repeatInput" class="clean-input w-full px-4 py-3 rounded-xl font-medium text-sm appearance-none cursor-pointer">
+                                        <option value="none">Sekali Saja</option>
+                                        <option value="daily">Setiap Hari</option>
+                                        <option value="workdays">Hari Kerja</option>
+                                        <option value="weekends">Akhir Pekan</option>
+                                    </select>
+                                    <div class="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-slate-400">
+                                        <i data-lucide="repeat" class="w-4 h-4"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="w-full xl:w-32">
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Jam</label>
+                                <input type="time" id="timeInput" class="clean-input w-full px-4 py-3 rounded-xl font-medium text-sm text-center" required>
+                            </div>
+
+                            <button type="submit" class="w-full xl:w-auto bg-slate-900 hover:bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold transition shadow-lg shadow-slate-200 hover:shadow-indigo-200 flex items-center justify-center gap-2 h-[48px]">
+                                <i data-lucide="plus" class="w-5 h-5"></i>
+                                <span>Tambah</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Task Lists Container (GRID LAYOUT) -->
+                    <div id="taskColumnsContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 flex-1 animate-slide-up" style="animation-delay: 0.2s;">
+                        <!-- Main 4 columns populated here -->
+                    </div>
+
+                    <!-- HISTORY SECTION (FULL WIDTH) -->
+                    <div class="animate-slide-up" style="animation-delay: 0.3s;">
+                        <div class="clean-card p-6 border-l-4 border-l-slate-400">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <span class="bg-slate-100 p-1.5 rounded text-slate-600"><i data-lucide="history" class="w-4 h-4"></i></span>
+                                Riwayat Hari Sebelumnya
+                            </h4>
+                            <!-- HISTORY SCROLL CONTAINER -->
+                            <div id="historyContainer" class="horizontal-scroll-container pb-2">
+                                <!-- JS Populated -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KOLOM KANAN (Widgets & Focus Zone) -->
+                <div class="lg:col-span-4 flex flex-col gap-6 h-full">
+                    
+                    <!-- FOCUS ZONE -->
+                    <div id="focus-zone-container" class="clean-card p-8 animate-slide-up relative overflow-hidden flex-shrink-0 border-t-4 border-t-indigo-600">
+                        <div class="absolute top-6 right-6 flex gap-2">
+                            <button onclick="toggleSound('rain')" class="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-full transition border border-slate-200 text-slate-500 hover:text-sky-600 tooltip" title="Suara Hujan">
+                                <i data-lucide="cloud-rain" class="w-5 h-5"></i>
+                            </button>
+                            <button onclick="toggleSound('cafe')" class="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-full transition border border-slate-200 text-slate-500 hover:text-amber-600 tooltip" title="Suara Kafe">
+                                <i data-lucide="coffee" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col items-center justify-center py-4">
+                            <h3 class="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-6 bg-indigo-50 px-3 py-1 rounded-full">Focus Zone</h3>
+                            <div class="text-7xl font-mono font-bold tracking-tighter mb-8 text-slate-900" id="pomodoroDisplay">25:00</div>
+                            <div class="flex gap-4 w-full justify-center">
+                                <button onclick="startPomodoro()" id="btnStartPomo" class="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center gap-2 w-40 justify-center">
+                                    <i data-lucide="play" class="w-5 h-5"></i> Mulai
+                                </button>
+                                <button onclick="resetPomodoro()" class="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition">
+                                    Reset
+                                </button>
+                            </div>
+                            <div class="mt-8 flex gap-4 text-xs font-medium text-slate-400">
+                                <button onclick="setPomodoroTime(25)" class="hover:text-indigo-600 transition">25m Fokus</button>
+                                <span class="text-slate-300">|</span>
+                                <button onclick="setPomodoroTime(5)" class="hover:text-indigo-600 transition">5m Istirahat</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div id="analytics" class="clean-card p-6 animate-slide-up relative overflow-hidden flex-shrink-0" style="animation-delay: 0.4s;">
+                        <div class="flex justify-between items-start mb-6 relative z-10">
+                            <div>
+                                <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Skor Harian</h3>
+                                <div class="flex items-baseline gap-2">
+                                    <span id="scoreDisplay" class="text-3xl font-extrabold text-slate-900">0</span>
+                                    <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">Poin</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Rasio Sukses</h3>
+                                <p id="probDisplay" class="text-3xl font-extrabold text-indigo-600">0%</p>
+                            </div>
+                        </div>
+                        <div class="w-full h-32 relative z-10 bg-slate-50/50 rounded-xl p-2 border border-slate-100">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Widgets Split (Atas Bawah - Flex Col) -->
+                    <div class="flex flex-col gap-6 animate-slide-up flex-1" style="animation-delay: 0.5s;">
+                        <!-- Kalender Kecil -->
+                        <div class="clean-card p-6 w-full flex-shrink-0">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 id="monthDisplay" class="font-bold text-sm text-slate-900 uppercase tracking-wide">Jan 2024</h4>
+                                <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600"><i data-lucide="calendar" class="w-4 h-4"></i></div>
+                            </div>
+                            <div class="calendar-grid text-slate-400 text-[10px] font-bold text-center mb-2 uppercase tracking-wide"><div>M</div><div>S</div><div>S</div><div>R</div><div>K</div><div>J</div><div>S</div></div>
+                            <div id="calendarDays" class="calendar-grid"></div>
+                        </div>
+
+                        <!-- Catatan Cepat -->
+                        <div class="clean-card p-6 flex flex-col w-full min-h-[250px]">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-bold text-sm text-slate-900 uppercase tracking-wide">Catatan Cepat</h4>
+                                <div class="p-2 bg-orange-50 rounded-lg text-orange-600"><i data-lucide="pen-tool" class="w-4 h-4"></i></div>
+                            </div>
+                            <div id="notionArea" class="notion-editor text-sm text-slate-600 bg-transparent flex-grow rounded-xl p-4 border border-slate-200 focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50/50 transition" contenteditable="true" placeholder="Tulis ide atau catatan cepat di sini..."></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BIG CALENDAR & LIFETIME -->
+                <div id="calendar" class="lg:col-span-12 animate-slide-up scroll-mt-28" style="animation-delay: 0.6s;">
+                    <div class="clean-card p-8">
+                        <div class="flex justify-between items-center mb-8">
+                            <div class="flex items-center gap-4">
+                                <div class="p-3 bg-emerald-50 rounded-2xl text-emerald-600 border border-emerald-100">
+                                    <i data-lucide="calendar-days" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-slate-900">Jadwal Bulanan</h3>
+                                    <p class="text-sm text-slate-500 mt-1">Klik tanggal untuk menambah detail agenda.</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-2 bg-slate-100 p-1 rounded-lg">
+                                <button onclick="changeMonth(-1)" class="p-2 hover:bg-white rounded-md transition shadow-sm text-slate-600"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                                <h4 id="bigCalendarMonth" class="text-sm font-bold min-w-[140px] text-center pt-2 text-slate-800">Januari 2024</h4>
+                                <button onclick="changeMonth(1)" class="p-2 hover:bg-white rounded-md transition shadow-sm text-slate-600"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-7 gap-1 text-center mb-4">
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Min</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Sen</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Sel</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Rab</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Kam</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Jum</div>
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Sab</div>
+                        </div>
+                        <div id="bigCalendarGrid" class="big-calendar-grid"></div>
+                    </div>
+                </div>
+
+                <div id="lifetime-stats" class="lg:col-span-12 animate-slide-up scroll-mt-28" style="animation-delay: 0.7s;">
+                    <div class="clean-card p-8">
+                        <div class="flex justify-between items-start mb-8">
+                            <div>
+                                <h3 class="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                                    <span class="bg-indigo-50 p-2 rounded-xl text-indigo-600 border border-indigo-100"><i data-lucide="trending-up" class="w-6 h-6"></i></span>
+                                    Pertumbuhan Produktivitas
+                                </h3>
+                                <p class="text-sm text-slate-500 mt-2 ml-14 max-w-lg">Grafik ini menunjukkan akumulasi total poin produktivitas Anda dari waktu ke waktu.</p>
+                            </div>
+                            <div class="text-right">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Akumulasi</h3>
+                                <div class="flex items-baseline justify-end gap-2">
+                                    <span id="totalLifetimeScore" class="text-4xl font-extrabold text-indigo-600">0</span>
+                                    <span class="text-sm font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">Poin</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-full h-80 relative z-10 bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                            <canvas id="lifetimeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CATATAN -->
+    <div id="noteModal" class="modal-overlay fixed inset-0 hidden flex items-center justify-center">
+        <div class="modal-content bg-white rounded-2xl p-8 w-[500px]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-xl text-slate-900 flex items-center gap-2"><i data-lucide="edit" class="w-5 h-5 text-indigo-600"></i> Catatan Tanggal</h3>
+                <button onclick="closeModal('noteModal')" class="text-slate-400 hover:text-slate-800 transition"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="mb-4">
+                <span id="modalDateDisplay" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 uppercase tracking-wide">Tanggal</span>
+            </div>
+            <textarea id="modalNoteInput" class="clean-input w-full h-64 p-4 rounded-xl text-sm mb-6 resize-none leading-relaxed" placeholder="Tulis agenda atau catatan penting di sini..."></textarea>
+            <div class="flex justify-between items-center">
+                <button onclick="deleteNote()" class="text-red-500 text-sm font-semibold hover:bg-red-50 px-4 py-2 rounded-lg transition">Hapus Catatan</button>
+                <button onclick="saveNote()" class="bg-indigo-600 text-white px-8 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SETTINGS -->
+    <div id="settingsModal" class="modal-overlay fixed inset-0 hidden flex items-center justify-center">
+        <div class="modal-content bg-white rounded-2xl p-8 w-[600px]">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="font-bold text-2xl text-slate-900 flex items-center gap-3"><i data-lucide="settings" class="w-6 h-6 text-slate-600"></i> Pengaturan</h3>
+                <button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-slate-800 transition"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="space-y-8">
+                <div>
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Backup & Restore Data</h4>
+                    <div class="flex gap-4">
+                        <button onclick="exportData()" class="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 py-4 rounded-2xl font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                            <i data-lucide="download" class="w-5 h-5 text-indigo-500"></i> Download Backup
+                        </button>
+                        <div class="flex-1 relative">
+                            <input type="file" id="importFile" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="importData(this)">
+                            <button class="w-full bg-slate-900 hover:bg-slate-800 text-white border border-slate-900 py-4 rounded-2xl font-bold transition flex items-center justify-center gap-2 shadow-lg">
+                                <i data-lucide="upload" class="w-5 h-5"></i> Restore Backup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="border-t border-slate-100 pt-6">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Kustomisasi Kategori</h4>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div><label class="text-[10px] font-bold text-rose-500 mb-1.5 block uppercase">Kategori 1</label><input type="text" id="cat1Name" class="clean-input w-full px-4 py-2.5 rounded-xl text-sm font-medium"></div>
+                        <div><label class="text-[10px] font-bold text-sky-500 mb-1.5 block uppercase">Kategori 2</label><input type="text" id="cat2Name" class="clean-input w-full px-4 py-2.5 rounded-xl text-sm font-medium"></div>
+                        <div><label class="text-[10px] font-bold text-emerald-500 mb-1.5 block uppercase">Kategori 3</label><input type="text" id="cat3Name" class="clean-input w-full px-4 py-2.5 rounded-xl text-sm font-medium"></div>
+                    </div>
+                    <div class="mt-6 text-right">
+                        <button onclick="saveCategories()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition shadow-md">Simpan Perubahan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIO -->
+    <audio id="audio-rain" loop src="https://assets.mixkit.co/sfx/preview/mixkit-light-rain-loop-2393.mp3"></audio>
+    <audio id="audio-cafe" loop src="https://assets.mixkit.co/sfx/preview/mixkit-restaurant-ambience-with-people-talking-background-433.mp3"></audio>
+
+    <script>
+        // --- DATA STATE ---
+        const defaultCategories = {
+            self: { label: 'Self', id: 'list-self', countId: 'count-self', borderClass: 'border-l-rose-500', textClass: 'text-rose-600', icon: 'user' },
+            kuliah: { label: 'Kuliah', id: 'list-kuliah', countId: 'count-kuliah', borderClass: 'border-l-sky-500', textClass: 'text-sky-600', icon: 'graduation-cap' },
+            kerja: { label: 'Kerja', id: 'list-kerja', countId: 'count-kerja', borderClass: 'border-l-emerald-500', textClass: 'text-emerald-600', icon: 'briefcase' }
+        };
+
+        let state = {
+            tasks: [], 
+            history: [], 
+            currentScore: 0,
+            lastVisitDate: null,
+            noteContent: '',
+            calendarNotes: {},
+            customCategories: JSON.parse(JSON.stringify(defaultCategories))
+        };
+
+        let myChart; 
+        let lifetimeChart;
+        let currentCalendarDate = new Date();
+        let selectedDateKey = null;
+        let pomodoroInterval;
+        let pomodoroTime = 25 * 60;
+        let isPomodoroRunning = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            checkMidnightReset();
+            updateCategoryInputs();
+            renderCalendar(); 
+            renderBigCalendar(); 
+            initChart();
+            initLifetimeChart();
+            updateUI(); 
+            
+            // Safe Clock Update
+            if (window.clockInterval) clearInterval(window.clockInterval);
+            window.clockInterval = setInterval(updateClock, 1000);
+            updateClock(); 
+            
+            const notionArea = document.getElementById('notionArea');
+            if(notionArea) {
+                notionArea.addEventListener('input', () => {
+                    state.noteContent = notionArea.innerHTML;
+                    saveData();
+                });
+            }
+
+            const searchInput = document.getElementById('searchInput');
+            if(searchInput) {
+                searchInput.addEventListener('input', (e) => updateUI(e.target.value));
+            }
+
+            lucide.createIcons();
+        });
+
+        // --- SAFEGUARDED UPDATE CLOCK ---
+        function updateClock() { 
+            try {
+                const now = new Date(); 
+                const clockEl = document.getElementById('clockDisplay');
+                const dateEl = document.getElementById('currentDateDisplay');
+                
+                if (clockEl) {
+                    clockEl.innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                }
+                if (dateEl) {
+                    dateEl.innerText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' }); 
+                }
+            } catch (e) {
+                console.warn("Clock update skipped (DOM not ready)");
+            }
+        }
+
+        // --- LOGIC LAINNYA ---
+        function startPomodoro() {
+            if (isPomodoroRunning) {
+                clearInterval(pomodoroInterval);
+                isPomodoroRunning = false;
+                document.getElementById('btnStartPomo').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i> Mulai';
+                document.getElementById('btnStartPomo').classList.remove('bg-rose-500', 'hover:bg-rose-600');
+                document.getElementById('btnStartPomo').classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            } else {
+                isPomodoroRunning = true;
+                document.getElementById('btnStartPomo').innerHTML = '<i data-lucide="pause" class="w-5 h-5"></i> Pause';
+                document.getElementById('btnStartPomo').classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                document.getElementById('btnStartPomo').classList.add('bg-rose-500', 'hover:bg-rose-600');
+                
+                pomodoroInterval = setInterval(() => {
+                    pomodoroTime--;
+                    updatePomodoroDisplay();
+                    if (pomodoroTime <= 0) {
+                        clearInterval(pomodoroInterval);
+                        isPomodoroRunning = false;
+                        new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3').play();
+                        alert("Waktu Habis!");
+                        document.getElementById('btnStartPomo').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i> Mulai';
+                        document.getElementById('btnStartPomo').classList.remove('bg-rose-500', 'hover:bg-rose-600');
+                        document.getElementById('btnStartPomo').classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                    }
+                }, 1000);
+            }
+            lucide.createIcons();
+        }
+
+        function resetPomodoro() {
+            clearInterval(pomodoroInterval);
+            isPomodoroRunning = false;
+            pomodoroTime = 25 * 60;
+            updatePomodoroDisplay();
+            document.getElementById('btnStartPomo').innerHTML = '<i data-lucide="play" class="w-5 h-5"></i> Mulai';
+            document.getElementById('btnStartPomo').classList.remove('bg-rose-500', 'hover:bg-rose-600');
+            document.getElementById('btnStartPomo').classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            lucide.createIcons();
+        }
+
+        function setPomodoroTime(minutes) {
+            resetPomodoro();
+            pomodoroTime = minutes * 60;
+            updatePomodoroDisplay();
+        }
+
+        function updatePomodoroDisplay() {
+            const m = Math.floor(pomodoroTime / 60).toString().padStart(2, '0');
+            const s = (pomodoroTime % 60).toString().padStart(2, '0');
+            const display = document.getElementById('pomodoroDisplay');
+            if(display) display.innerText = `${m}:${s}`;
+        }
+
+        let currentSound = null;
+        function toggleSound(type) {
+            const audio = document.getElementById(`audio-${type}`);
+            if(!audio) return;
+            
+            if (currentSound && currentSound !== audio) {
+                currentSound.pause();
+                currentSound.currentTime = 0;
+            }
+            if (audio.paused) {
+                audio.play();
+                currentSound = audio;
+            } else {
+                audio.pause();
+                currentSound = null;
+            }
+        }
+
+        function toggleZenMode() { document.body.classList.toggle('zen-active'); }
+
+        function openSettingsModal() {
+            document.getElementById('cat1Name').value = state.customCategories.self.label;
+            document.getElementById('cat2Name').value = state.customCategories.kuliah.label;
+            document.getElementById('cat3Name').value = state.customCategories.kerja.label;
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function saveCategories() {
+            state.customCategories.self.label = document.getElementById('cat1Name').value || 'Self';
+            state.customCategories.kuliah.label = document.getElementById('cat2Name').value || 'Kuliah';
+            state.customCategories.kerja.label = document.getElementById('cat3Name').value || 'Kerja';
+            saveData();
+            updateCategoryInputs(); 
+            updateUI(); 
+            closeModal('settingsModal');
+        }
+
+        function updateCategoryInputs() {
+            const select = document.getElementById('categoryInput');
+            if(select) {
+                select.innerHTML = `
+                    <option value="self">${state.customCategories.self.label}</option>
+                    <option value="kuliah">${state.customCategories.kuliah.label}</option>
+                    <option value="kerja">${state.customCategories.kerja.label}</option>
+                `;
+            }
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(state);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', 'luxury_planner_backup.json');
+            linkElement.click();
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const newState = JSON.parse(e.target.result);
+                    if (newState.tasks && newState.history) {
+                        state = newState;
+                        saveData();
+                        location.reload(); 
+                    } else { alert("File tidak valid."); }
+                } catch(err) { alert("Gagal membaca file."); }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- DUMMY DATA GENERATOR ---
+        function generateDummyHistory() {
+            if (state.history.length === 0) {
+                const today = new Date();
+                for (let i = 5; i > 0; i--) {
+                    const d = new Date(today);
+                    d.setDate(today.getDate() - i);
+                    
+                    const dummyTasks = [
+                        { text: "Meeting Pagi", time: "09:00", completed: true, category: 'kerja' },
+                        { text: "Belajar Coding", time: "14:00", completed: true, category: 'kuliah' },
+                        { text: "Gym", time: "18:00", completed: false, category: 'self' }
+                    ];
+
+                    state.history.push({
+                        date: d.toLocaleDateString(),
+                        score: Math.floor(Math.random() * 10),
+                        total: 3,
+                        completed: 2,
+                        tasks: dummyTasks 
+                    });
+                }
+                saveData();
+            }
+        }
+
+        function updateUI(searchTerm = '') {
+            const taskContainer = document.getElementById('taskColumnsContainer');
+            const historyContainer = document.getElementById('historyContainer');
+            
+            if(!taskContainer || !historyContainer) return;
+            
+            taskContainer.innerHTML = ''; 
+            historyContainer.innerHTML = '';
+
+            const today = new Date().getDay(); 
+            const columnKeys = ['self', 'kuliah', 'kerja', 'all'];
+            
+            // 1. RENDER CURRENT COLUMNS (GRID)
+            columnKeys.forEach(key => {
+                let catConfig, title, icon, count = 0, tasksForCol = [];
+
+                if (key === 'all') {
+                    catConfig = { borderClass: 'border-t-indigo-500', bgClass: 'bg-indigo-50/10' };
+                    title = 'All Plan';
+                    icon = 'list-checks';
+                    tasksForCol = state.tasks;
+                } else {
+                    catConfig = state.customCategories[key];
+                    title = catConfig.label;
+                    icon = catConfig.icon;
+                    tasksForCol = state.tasks.filter(t => t.category === key);
+                }
+
+                tasksForCol = tasksForCol.filter(t => {
+                    if (t.repeatType === 'workdays' && (today === 0 || today === 6)) return false; 
+                    if (t.repeatType === 'weekends' && (today > 0 && today < 6)) return false; 
+                    return true;
+                });
+
+                if (searchTerm) {
+                    tasksForCol = tasksForCol.filter(t => t.text.toLowerCase().includes(searchTerm.toLowerCase()));
+                }
+                count = tasksForCol.length;
+
+                const colDiv = document.createElement('div');
+                // CLEAN CARD STYLE FOR COLUMNS
+                colDiv.className = `clean-card p-6 flex flex-col min-h-[600px] border-t-4 flex-shrink-0 ${key === 'all' ? 'border-t-indigo-500' : catConfig.borderClass}`;
+                
+                let headerColor = key === 'all' ? 'text-indigo-600 bg-indigo-50' : `${catConfig.textClass} ${catConfig.textClass.replace('text', 'bg').replace('600', '50')}`;
+                
+                colDiv.innerHTML = `
+                    <div class="flex justify-between items-center mb-6 pb-2 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wider">
+                            <span class="${headerColor} p-1.5 rounded-lg border border-slate-200/50"><i data-lucide="${icon}" class="w-4 h-4"></i></span>
+                            ${title}
+                        </h3>
+                        <span class="text-[11px] font-bold ${key === 'all' ? 'text-indigo-600 bg-indigo-50' : `${catConfig.textClass} bg-slate-50`} px-2.5 py-1 rounded-full border border-slate-100">${count}</span>
+                    </div>
+                    <ul class="space-y-3 flex-grow overflow-y-auto pr-1 custom-scrollbar task-list-ul"></ul>
+                `;
+
+                const listUl = colDiv.querySelector('.task-list-ul');
+                renderTaskList(listUl, tasksForCol, key, state.customCategories);
+                taskContainer.appendChild(colDiv);
+            });
+
+            // 2. RENDER HISTORY COLUMNS
+            for (let i = state.history.length - 1; i >= 0; i--) {
+                const historyData = state.history[i];
+                const histDiv = document.createElement('div');
+                // CLEAN CARD FOR HISTORY
+                histDiv.className = `clean-card p-6 flex flex-col min-h-[500px] min-w-[320px] w-[320px] border-t-4 border-t-slate-300 flex-shrink-0 opacity-80 hover:opacity-100 transition`;
+
+                const dateTitle = historyData.date || 'Unknown Date';
+                const histCount = historyData.tasks ? historyData.tasks.length : 0;
+
+                histDiv.innerHTML = `
+                    <div class="flex justify-between items-center mb-6 pb-2 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-500 flex items-center gap-2 text-sm uppercase tracking-wide">
+                            <span class="bg-slate-100 text-slate-500 p-1.5 rounded-lg"><i data-lucide="history" class="w-4 h-4"></i></span>
+                            ${dateTitle}
+                        </h3>
+                        <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-full">${histCount}</span>
+                    </div>
+                    <ul class="space-y-3 flex-grow overflow-y-auto pr-1 custom-scrollbar task-list-ul"></ul>
+                `;
+
+                const listUl = histDiv.querySelector('.task-list-ul');
+                if (historyData.tasks && historyData.tasks.length > 0) {
+                    historyData.tasks.forEach(task => {
+                        const li = document.createElement('li');
+                        li.className = `flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white transition`;
+                        li.innerHTML = `
+                            <div class="truncate flex-grow">
+                                <p class="text-xs font-semibold text-slate-600 ${task.completed ? 'line-through text-slate-400' : ''} truncate">${task.text}</p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-[9px] font-mono text-slate-400 bg-white px-1 rounded border border-slate-100">${task.time || '--:--'}</span>
+                                    <span class="text-[9px] px-1.5 rounded bg-slate-200 text-slate-600 font-bold uppercase tracking-wider">${task.category}</span>
+                                </div>
+                            </div>
+                            <div class="${task.completed ? 'text-emerald-500' : 'text-rose-400'}">
+                                <i data-lucide="${task.completed ? 'check-circle' : 'x-circle'}" class="w-4 h-4"></i>
+                            </div>
+                        `;
+                        listUl.appendChild(li);
+                    });
+                } else {
+                    listUl.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center opacity-40"><p class="text-xs font-medium text-slate-400">Data arsip tidak tersedia</p></div>`;
+                }
+
+                historyContainer.appendChild(histDiv);
+            }
+
+            lucide.createIcons();
+            
+            const scoreEl = document.getElementById('scoreDisplay');
+            if(scoreEl) scoreEl.innerText = state.currentScore;
+            
+            let allTotal = state.tasks.length;
+            let allDone = state.tasks.filter(t => t.completed).length;
+            state.history.forEach(h => { allTotal += h.total; allDone += h.completed; });
+            const prob = allTotal === 0 ? 0 : Math.round((allDone/allTotal)*100);
+            
+            const probEl = document.getElementById('probDisplay');
+            if(probEl) probEl.innerText = `${prob}%`;
+        }
+
+        // Helper to render active task lists
+        function renderTaskList(container, tasks, key, categories) {
+            if (tasks.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-64 text-center opacity-40"><i data-lucide="inbox" class="w-8 h-8 text-slate-300 mb-2"></i><p class="text-xs font-medium text-slate-400">Belum ada tugas</p></div>`;
+                return;
+            }
+
+            tasks.forEach(task => {
+                const isDone = task.completed;
+                const taskCatConfig = categories[task.category] || categories.self;
+                const priorityClass = `priority-${task.priority || 'medium'}`;
+                const li = document.createElement('li');
+                li.className = `group flex items-center justify-between p-3.5 rounded-xl transition-all border border-slate-100 hover:shadow-md hover:border-slate-200 bg-white border-l-4 ${key === 'all' ? taskCatConfig.borderClass : priorityClass} ${isDone ? 'opacity-50 grayscale bg-slate-50' : ''}`;
+                
+                const recurringIcon = task.recurring ? `<i data-lucide="repeat" class="w-3 h-3 text-slate-400" title="Berulang"></i>` : '';
+
+                li.innerHTML = `
+                    <div class="flex items-center gap-3 overflow-hidden w-full">
+                        <label class="custom-checkbox relative flex items-center cursor-pointer flex-shrink-0">
+                            <input type="checkbox" class="sr-only" ${isDone ? 'checked' : ''} onchange="toggleTask(${task.id})">
+                            <div class="w-5 h-5 border-2 border-slate-300 rounded-md transition flex items-center justify-center bg-white hover:border-slate-800">
+                                <i data-lucide="check" class="w-3.5 h-3.5 text-white"></i>
+                            </div>
+                        </label>
+                        <div class="truncate flex-grow cursor-pointer" onclick="toggleTaskDetails(${task.id})">
+                            <div class="flex items-center gap-1.5">
+                                <p class="text-sm font-semibold text-slate-700 ${isDone ? 'line-through text-slate-400' : ''} truncate">${task.text}</p>
+                                ${recurringIcon}
+                            </div>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-[10px] font-mono tracking-wide flex items-center gap-1 text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                    <i data-lucide="clock" class="w-3 h-3"></i> ${task.time}
+                                </span>
+                                ${key === 'all' ? `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${taskCatConfig.textClass} bg-slate-50 border border-slate-100">${taskCatConfig.label}</span>` : ''}
+                                <button onclick="event.stopPropagation(); addToCalendar('${task.text}', '${task.time}')" class="text-slate-300 hover:text-indigo-600 transition p-1" title="Add to Calendar">
+                                    <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="deleteTask(${task.id})" class="text-slate-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100 p-1.5">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                `;
+                container.appendChild(li);
+            });
+        }
+
+        document.getElementById('todoForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = document.getElementById('taskInput').value.trim();
+            const category = document.getElementById('categoryInput').value;
+            const time = document.getElementById('timeInput').value;
+            const priority = document.getElementById('priorityInput').value;
+            const repeatType = document.getElementById('repeatInput').value;
+            
+            if(!text || !time) return;
+
+            const timeExists = state.tasks.some(t => t.time === time);
+            if(timeExists) { alert(`Waktu ${time} sudah terisi. Harap pilih waktu berbeda.`); return; }
+
+            state.tasks.push({ 
+                id: Date.now(), 
+                text, time, 
+                completed: false, 
+                category, 
+                priority, 
+                repeatType 
+            });
+            state.tasks.sort((a,b) => a.time.localeCompare(b.time));
+            
+            document.getElementById('taskInput').value = '';
+            document.getElementById('timeInput').value = '';
+            saveData();
+        });
+
+        function toggleTask(id) {
+            const task = state.tasks.find(t => t.id === id);
+            if (task) { task.completed = !task.completed; state.currentScore += task.completed ? 1 : -1; saveData(); }
+        }
+
+        function deleteTask(id) {
+            if(!confirm("Hapus tugas ini?")) return;
+            const task = state.tasks.find(t => t.id === id);
+            if (task && task.completed) state.currentScore -= 1;
+            state.tasks = state.tasks.filter(t => t.id !== id);
+            saveData();
+        }
+
+        function addToCalendar(title, time) {
+            const now = new Date();
+            const [hours, minutes] = time.split(':');
+            const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0);
+            const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+            const formatTime = (date) => date.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formatTime(startDate)}/${formatTime(endDate)}&details=Added+from+Luxury+Focus+Planner`;
+            window.open(url, '_blank');
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('luxuryPlannerPro_v11'); 
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                state = { ...state, ...parsed };
+                if(!state.customCategories) state.customCategories = JSON.parse(JSON.stringify(defaultCategories));
+                state.tasks.forEach(t => {
+                    if (!t.repeatType) {
+                        t.repeatType = t.recurring ? 'daily' : 'none';
+                    }
+                });
+            } else {
+                generateDummyHistory();
+            }
+            if (!state.lastVisitDate) state.lastVisitDate = new Date().toLocaleDateString();
+            const notion = document.getElementById('notionArea');
+            if(notion) notion.innerHTML = state.noteContent;
+        }
+
+        function saveData() {
+            localStorage.setItem('luxuryPlannerPro_v11', JSON.stringify(state));
+            updateUI(); updateChartData(); updateLifetimeChart();
+        }
+
+        function checkMidnightReset() {
+            const today = new Date().toLocaleDateString();
+            if (state.lastVisitDate !== today) {
+                const uncompleted = state.tasks.filter(t => !t.completed).length;
+                let finalYesterdayScore = state.currentScore;
+                if (uncompleted > 0) finalYesterdayScore -= uncompleted;
+                
+                const archivedTasks = JSON.parse(JSON.stringify(state.tasks));
+
+                state.history.push({ 
+                    date: state.lastVisitDate, 
+                    score: finalYesterdayScore, 
+                    total: state.tasks.length, 
+                    completed: state.tasks.filter(t => t.completed).length,
+                    tasks: archivedTasks 
+                });
+                
+                state.tasks = state.tasks.filter(t => t.repeatType && t.repeatType !== 'none');
+                state.tasks.forEach(t => t.completed = false);
+                
+                state.currentScore = 0; 
+                state.lastVisitDate = today;
+                saveData();
+            }
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+            gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+            myChart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'Produktivitas', data: [], borderColor: '#10b981', backgroundColor: gradient, borderWidth: 2, tension: 0.4, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#10b981', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: {display: false} }, scales: { x: { display: false }, y: { display: false, beginAtZero: true, suggestedMax: 5 } }, layout: { padding: 10 } } });
+            updateChartData();
+        }
+
+        function updateChartData() {
+            if (!myChart) return;
+            let labels = [], data = [];
+            if (state.history.length === 0) { labels.push('Start'); data.push(0); } 
+            else { labels = state.history.slice(-6).map(h => h.date.substring(0,5)); data = state.history.slice(-6).map(h => h.score); }
+            labels.push('Now'); data.push(state.currentScore);
+            myChart.data.labels = labels; myChart.data.datasets[0].data = data; myChart.update();
+        }
+
+        function initLifetimeChart() {
+            const ctx = document.getElementById('lifetimeChart').getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(99, 102, 241, 0.5)'); gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+            lifetimeChart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'Total Akumulasi', data: [], borderColor: '#4f46e5', backgroundColor: gradient, borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#4f46e5', pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 7 }] }, options: { responsive: true, maintainAspectRatio: false, animation: { duration: 1000, easing: 'easeOutQuart' }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#94a3b8' } }, y: { border: { display: false }, grid: { color: 'rgba(226, 232, 240, 0.6)', borderDash: [4, 4] }, ticks: { font: { family: 'Inter', size: 11 }, color: '#94a3b8' }, beginAtZero: true } }, layout: { padding: 10 } } });
+            updateLifetimeChart();
+        }
+
+        function updateLifetimeChart() {
+            if (!lifetimeChart) return;
+            let labels = [], data = [], cumulativeScore = 0;
+            if (state.history.length > 0) { state.history.forEach(h => { labels.push(h.date.substring(0, 5)); cumulativeScore += (h.score || 0); data.push(cumulativeScore); }); } 
+            else { labels.push('Start'); data.push(0); }
+            labels.push('Now'); cumulativeScore += state.currentScore; data.push(cumulativeScore);
+            const scoreEl = document.getElementById('totalLifetimeScore');
+            if(scoreEl) scoreEl.innerText = cumulativeScore;
+            lifetimeChart.data.labels = labels; lifetimeChart.data.datasets[0].data = data; lifetimeChart.update();
+        }
+
+        function renderCalendar() { const now = new Date(); const year = now.getFullYear(); const month = now.getMonth(); const daysInMonth = new Date(year, month + 1, 0).getDate(); const firstDay = new Date(year, month, 1).getDay(); const mDisplay = document.getElementById('monthDisplay'); if(mDisplay) mDisplay.innerText = now.toLocaleString('id-ID', { month: 'long', year: 'numeric' }); const calendarDiv = document.getElementById('calendarDays'); if(!calendarDiv) return; calendarDiv.innerHTML = ''; for (let i = 0; i < firstDay; i++) calendarDiv.appendChild(document.createElement('div')); for (let i = 1; i <= daysInMonth; i++) { const dayEl = document.createElement('div'); dayEl.className = 'calendar-day hover:bg-slate-200 transition'; dayEl.innerText = i; if (i === now.getDate()) dayEl.classList.add('today'); calendarDiv.appendChild(dayEl); } }
+        function renderBigCalendar() { const year = currentCalendarDate.getFullYear(); const month = currentCalendarDate.getMonth(); const daysInMonth = new Date(year, month + 1, 0).getDate(); const firstDay = new Date(year, month, 1).getDay(); const mDisplay = document.getElementById('bigCalendarMonth'); if(mDisplay) mDisplay.innerText = currentCalendarDate.toLocaleString('id-ID', { month: 'long', year: 'numeric' }); const grid = document.getElementById('bigCalendarGrid'); if(!grid) return; grid.innerHTML = ''; for (let i = 0; i < firstDay; i++) { const emptyCell = document.createElement('div'); emptyCell.className = 'bg-white/20'; grid.appendChild(emptyCell); } const today = new Date(); const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year; for (let i = 1; i <= daysInMonth; i++) { const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`; const note = state.calendarNotes[dateKey] || ''; const cell = document.createElement('div'); cell.className = 'big-calendar-cell group'; if (isCurrentMonth && i === today.getDate()) cell.classList.add('today'); if (note) cell.classList.add('has-note'); cell.innerHTML = `<div class="flex justify-between items-start mb-1"><span class="font-bold text-sm ${isCurrentMonth && i === today.getDate() ? 'bg-emerald-600 text-white rounded-full w-6 h-6 flex items-center justify-center' : 'text-slate-600'}">${i}</span>${note ? '<i data-lucide="file-text" class="w-3 h-3 text-emerald-500"></i>' : ''}</div>${note ? `<div class="note-preview">${note}</div>` : ''}<div class="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/5 transition duration-300 pointer-events-none"></div>`; cell.onclick = () => openNoteModal(dateKey, i, month, year); grid.appendChild(cell); } lucide.createIcons(); }
+        function changeMonth(delta) { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta); renderBigCalendar(); }
+        function openNoteModal(dateKey, day, month, year) { selectedDateKey = dateKey; const dateObj = new Date(year, month, day); document.getElementById('modalDateDisplay').innerText = dateObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); document.getElementById('modalNoteInput').value = state.calendarNotes[dateKey] || ''; document.getElementById('noteModal').classList.remove('hidden'); document.getElementById('modalNoteInput').focus(); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); selectedDateKey = null; }
+        function saveNote() { if (!selectedDateKey) return; const content = document.getElementById('modalNoteInput').value.trim(); if (content) state.calendarNotes[selectedDateKey] = content; else delete state.calendarNotes[selectedDateKey]; saveData(); renderBigCalendar(); closeModal('noteModal'); }
+        function deleteNote() { if (selectedDateKey) { delete state.calendarNotes[selectedDateKey]; saveData(); renderBigCalendar(); closeModal('noteModal'); } }
+        
+        document.getElementById('noteModal').addEventListener('click', (e) => { if (e.target === document.getElementById('noteModal')) closeModal('noteModal'); });
+        document.getElementById('settingsModal').addEventListener('click', (e) => { if (e.target === document.getElementById('settingsModal')) closeModal('settingsModal'); });
+    </script>
+</body>
+</html>
